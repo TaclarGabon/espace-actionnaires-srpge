@@ -474,6 +474,13 @@ function completeBulletin(){
   if(isMinor && !document.getElementById('minorName').value.trim()) return alert("Veuillez renseigner le nom de l'enfant.");
   const payload=buildBulletinPayload();
   localStorage.setItem('srpge_bulletin_prefill',JSON.stringify(payload));
+  localStorage.setItem('srpge_pending_subscription',JSON.stringify({
+    subscriptionId:payload.subscriptionId,
+    index:currentBulletinIndex,
+    project:lines[currentBulletinIndex].project,
+    shares:lines[currentBulletinIndex].shares,
+    openedAt:new Date().toISOString()
+  }));
   localStorage.removeItem('srpge_bulletin_completed');
   closeModal('bulletinModal');
   const bulletinWindow=window.open('bulletin-intelligent.html','srpgeBulletinWindow');
@@ -556,21 +563,45 @@ async function persistSubscriptions(message){
 }
 
 function applyBulletinCompletion(data){
-  if(!data || !data.subscriptionId) return;
-  const index=lines.findIndex(item=>item.id===data.subscriptionId);
-  if(index<0) return;
+  if(!data) return false;
 
-  lines[index].status='Complété';
-  lines[index].completedDate=data.completedDate || new Date().toLocaleDateString('fr-FR');
-  lines[index].beneficiary=data.beneficiary || lines[index].beneficiary || 'Moi-même';
-  lines[index].documentRef=data.documentRef || lines[index].documentRef || ('Bulletin-'+(index+1));
+  let lineIndex=-1;
+  if(data.subscriptionId){
+    lineIndex=lines.findIndex(item=>item.id===data.subscriptionId);
+  }
 
+  if(lineIndex<0){
+    try{
+      const pending=JSON.parse(localStorage.getItem('srpge_pending_subscription')||'{}');
+      if(Number.isInteger(pending.index) && lines[pending.index]){
+        lineIndex=pending.index;
+      }else if(pending.project){
+        lineIndex=lines.findIndex(item=>item.project===pending.project && Number(item.shares)===Number(pending.shares));
+      }
+    }catch(error){}
+  }
+
+  if(lineIndex<0 && currentBulletinIndex!==null && lines[currentBulletinIndex]){
+    lineIndex=currentBulletinIndex;
+  }
+
+  if(lineIndex<0) return false;
+
+  lines[lineIndex].status='Complété';
+  lines[lineIndex].completedDate=data.completedDate || new Date().toLocaleDateString('fr-FR');
+  lines[lineIndex].beneficiary=data.beneficiary || lines[lineIndex].beneficiary || 'Moi-même';
+  lines[lineIndex].documentRef=data.documentRef || lines[lineIndex].documentRef || ('Bulletin-'+(lineIndex+1));
+
+  localStorage.setItem('srpge_subscriptions_demo',JSON.stringify(lines));
+  localStorage.removeItem('srpge_pending_subscription');
   render();
+
   if(window.firebaseApi){
     window.firebaseApi.saveSubscriptions(lines)
       .then(()=>console.log('Statut du bulletin enregistré dans Firebase.'))
-      .catch(error=>alert('Le statut a été mis à jour, mais Firebase a retourné une erreur : '+error.message));
+      .catch(error=>alert('Le statut est passé à Complété, mais Firebase a retourné une erreur : '+error.message));
   }
+  return true;
 }
 
 function checkBulletinCompletion(){
@@ -578,8 +609,9 @@ function checkBulletinCompletion(){
   if(!raw) return;
   try{
     const data=JSON.parse(raw);
-    applyBulletinCompletion(data);
-    localStorage.removeItem('srpge_bulletin_completed');
+    if(applyBulletinCompletion(data)){
+      localStorage.removeItem('srpge_bulletin_completed');
+    }
   }catch(error){
     console.error(error);
   }
@@ -588,19 +620,26 @@ function checkBulletinCompletion(){
 window.addEventListener('message',event=>{
   const message=event.data||{};
   if(message.type==='SRPGE_BULLETIN_COMPLETED'){
-    applyBulletinCompletion(message.data);
-    localStorage.removeItem('srpge_bulletin_completed');
+    if(applyBulletinCompletion(message.data)){
+      localStorage.removeItem('srpge_bulletin_completed');
+    }
   }
 });
 window.addEventListener('storage',event=>{
   if(event.key==='srpge_bulletin_completed' && event.newValue){
     try{
-      applyBulletinCompletion(JSON.parse(event.newValue));
-      localStorage.removeItem('srpge_bulletin_completed');
+      if(applyBulletinCompletion(JSON.parse(event.newValue))){
+        localStorage.removeItem('srpge_bulletin_completed');
+      }
     }catch(error){console.error(error)}
   }
 });
-window.addEventListener('focus',()=>setTimeout(checkBulletinCompletion,150));
+window.addEventListener('focus',()=>setTimeout(checkBulletinCompletion,100));
+window.addEventListener('pageshow',()=>setTimeout(checkBulletinCompletion,100));
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible') setTimeout(checkBulletinCompletion,100);
+});
+setInterval(checkBulletinCompletion,500);
 
 window.srpgeBridge={
   setLines:(v)=>{

@@ -144,8 +144,16 @@ function validatePreview(){
     prefill=JSON.parse(localStorage.getItem('srpge_bulletin_prefill')||'{}');
   }catch(error){}
 
+  let pending={};
+  try{
+    pending=JSON.parse(localStorage.getItem('srpge_pending_subscription')||'{}');
+  }catch(error){}
+
   const completion={
-    subscriptionId:prefill.subscriptionId||'',
+    subscriptionId:prefill.subscriptionId||pending.subscriptionId||'',
+    pendingIndex:Number.isInteger(pending.index)?pending.index:null,
+    project:pending.project||prefill.projet||'',
+    shares:pending.shares||prefill.actions||0,
     completedDate:new Date().toLocaleDateString('fr-FR'),
     beneficiary:(prefill.enfantNom&&prefill.enfantNom.trim())?'Enfant mineur':'Moi-même',
     documentRef:prefill.bulletin||'Bulletin SRPGE',
@@ -160,8 +168,10 @@ function validatePreview(){
     }catch(error){}
   }
 
-  alert('Bulletin validé. Le statut de votre souscription va passer automatiquement à « Complété ».');
-  setTimeout(()=>window.close(),500);
+  alert('Bulletin validé avec succès. Retournez à Mon compte : le statut passera automatiquement à « Complété ».');
+  setTimeout(()=>{
+    try{window.close()}catch(error){}
+  },800);
 }
 let zoomed=false;function zoomToggle(){zoomed=!zoomed;$('pages').style.gridTemplateColumns=zoomed?'1fr':'repeat(3,minmax(260px,1fr))';$('zoomBtn').textContent=zoomed?'Vue 3 pages':'Agrandir'}
 (function(){localStorage.removeItem('srpgeBulletinDraft');update()})();

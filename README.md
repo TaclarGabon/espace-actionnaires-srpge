@@ -1,12 +1,8 @@
-# SRPGE Firebase V3 — statut automatique
+# SRPGE Firebase V4 — validation robuste
 
-Déposer à la racine du dépôt GitHub :
-
+Remplacer sur GitHub :
 - index.html
 - bulletin-intelligent.html
 
-Après validation du bulletin :
-- la fenêtre du bulletin se ferme ;
-- la ligne passe automatiquement à « Complété » ;
-- la date apparaît ;
-- Firebase est mis à jour.
+La page Mon compte vérifie automatiquement le résultat du bulletin toutes les 500 ms,
+au retour sur l'onglet, lors du changement de visibilité et via postMessage/localStorage.
