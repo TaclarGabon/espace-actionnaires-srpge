@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Espace Actionnaires SRPGE — V1.1</title>
+<style>
+:root{
+  --blue:#174a7e;--blue2:#2468a6;--light:#f4f7fb;--white:#fff;--text:#17233a;
+  --muted:#718096;--green:#2e9b67;--orange:#f0a14a;--red:#d9534f;--purple:#6d4fc2;
+  --border:#e4eaf2;--shadow:0 14px 40px rgba(23,74,126,.10);--radius:18px;
+}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--light);color:var(--text)}
+button,input,select,textarea{font:inherit}.app{display:grid;grid-template-columns:265px 1fr;min-height:100vh}
+.sidebar{background:linear-gradient(180deg,#123d69,#1a568d);color:#fff;padding:24px 18px;position:sticky;top:0;height:100vh}
+.brand{display:flex;gap:12px;align-items:flex-start;padding:0 8px;margin-bottom:30px}.logo{width:48px;height:48px;border-radius:14px;background:#fff;color:var(--blue);display:flex;align-items:center;justify-content:center;font-weight:900;box-shadow:0 8px 24px rgba(0,0,0,.15)}
+.brand h1{font-size:21px;margin:1px 0 4px;letter-spacing:.5px}.brand small{display:block;opacity:.78;line-height:1.35;font-size:11px;max-width:165px}
+nav{display:flex;flex-direction:column;gap:10px}.nav-btn{border:0;background:transparent;color:#dceaff;padding:14px;border-radius:13px;text-align:left;font-weight:700;cursor:pointer;display:flex;gap:12px;align-items:center}.nav-btn:hover,.nav-btn.active{background:rgba(255,255,255,.14);color:#fff}
+.sidebar-note{position:absolute;left:18px;right:18px;bottom:18px;padding:14px;border-radius:14px;background:rgba(255,255,255,.08);font-size:12px;line-height:1.5}
+.main{padding:30px 32px 46px;overflow:hidden}.topbar{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px}.topbar h2{margin:0;font-size:29px}.topbar p{margin:7px 0 0;color:var(--muted)}
+.view{display:none}.view.active{display:block}.grid{display:grid;gap:18px}.stats{grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:20px}.card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+.stat{padding:21px;position:relative;overflow:hidden}.stat:after{content:"";position:absolute;width:92px;height:92px;border-radius:50%;right:-30px;top:-30px;background:rgba(36,104,166,.08)}.stat .label{color:var(--muted);font-size:13px;font-weight:800}.stat .value{font-size:31px;font-weight:900;margin:10px 0 4px}.stat .meta{font-size:12px;color:var(--green)}
+.two-col{grid-template-columns:1.3fr .7fr}.panel{padding:20px}.panel-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}.panel-head h3{margin:0;font-size:18px}.muted{color:var(--muted)}
+.call-box{padding:24px;background:linear-gradient(135deg,#174a7e,#2b73ad);color:#fff;border-radius:18px}.call-box h3{font-size:21px;margin:0 0 8px}.call-box p{margin:0 0 16px;opacity:.88;line-height:1.5}.call-meta{display:flex;gap:12px;flex-wrap:wrap}.call-chip{background:rgba(255,255,255,.14);padding:9px 12px;border-radius:999px;font-size:12px;font-weight:700}
+.project{margin:15px 0}.project-row{display:flex;justify-content:space-between;font-size:13px;margin-bottom:7px}.progress{height:9px;background:#edf1f6;border-radius:999px;overflow:hidden}.progress span{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--blue2),var(--purple))}
+.btn{border:0;border-radius:12px;padding:11px 16px;font-weight:800;cursor:pointer}.btn-primary{background:var(--blue);color:#fff}.btn-light{background:#fff;color:var(--blue);border:1px solid var(--border)}.btn-green{background:var(--green);color:#fff}.btn-danger{background:var(--red);color:#fff}
+.profile-card{padding:24px;display:grid;grid-template-columns:auto 1fr auto;gap:18px;align-items:center}.avatar{width:74px;height:74px;border-radius:22px;background:linear-gradient(135deg,var(--blue),var(--purple));color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900}.profile-card h3{margin:0 0 4px}.profile-card p{margin:4px 0;color:var(--muted)}
+.summary-grid{grid-template-columns:repeat(3,1fr);margin-top:18px}.mini{padding:18px}.mini strong{display:block;font-size:23px;margin-top:6px}.section-block{margin-top:18px}
+table{width:100%;border-collapse:collapse}th,td{padding:12px 10px;border-bottom:1px solid var(--border);font-size:13px;text-align:left;vertical-align:middle}th{background:#fafcff;color:var(--muted);font-weight:800}tr:hover td{background:#fbfdff}.table-wrap{overflow:auto}
+.badge{display:inline-flex;padding:6px 9px;border-radius:999px;font-size:11px;font-weight:800}.ok{background:#e6f6ef;color:#207d54}.warn{background:#fff3df;color:#b66c13}.bad{background:#fdeaea;color:#b53838}.info{background:#e9f1fb;color:#2e65a1}
+.direction-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}.subtab{border:1px solid var(--border);background:#fff;color:var(--blue);padding:10px 14px;border-radius:11px;font-weight:800;cursor:pointer}.subtab.active{background:var(--blue);color:#fff}.subview{display:none}.subview.active{display:block}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}.search,.filter{background:#fff;border:1px solid var(--border);border-radius:12px;padding:11px 13px}.search{flex:1;min-width:230px}.doc-grid{grid-template-columns:repeat(3,1fr)}.doc{padding:18px}.doc-icon{width:42px;height:42px;border-radius:12px;background:#eef4fb;color:var(--blue);display:flex;align-items:center;justify-content:center;font-weight:900;margin-bottom:12px}.doc h4{margin:0 0 6px}.doc p{font-size:12px;color:var(--muted);min-height:36px}
+.modal{position:fixed;inset:0;background:rgba(12,25,45,.55);display:none;align-items:center;justify-content:center;padding:20px;z-index:20}.modal.open{display:flex}.modal-card{background:#fff;border-radius:20px;max-width:760px;width:100%;max-height:90vh;overflow:auto;padding:24px;box-shadow:0 30px 80px rgba(0,0,0,.3)}.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}.close{border:0;background:#eef2f6;border-radius:10px;width:36px;height:36px;cursor:pointer;font-size:20px}.form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}.field{display:flex;flex-direction:column;gap:7px}.field.full{grid-column:1/-1}.field label{font-size:12px;font-weight:800;color:#526071}.field input,.field select,.field textarea{border:1px solid var(--border);border-radius:11px;padding:12px}.field textarea{min-height:90px}.amount-box{margin-top:18px;padding:16px;border-radius:14px;background:#eef5fc;display:flex;justify-content:space-between;align-items:center}.amount-box strong{font-size:24px;color:var(--blue)}.notice{padding:13px 15px;border-radius:12px;background:#fff8e8;border:1px solid #f5d98f;color:#805a00;font-size:13px;margin-bottom:16px}
+.mobile-top{display:none}
+@media(max-width:1050px){.stats{grid-template-columns:repeat(2,1fr)}.two-col{grid-template-columns:1fr}.doc-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:760px){.app{grid-template-columns:1fr}.sidebar{display:none}.main{padding:18px}.mobile-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}.stats,.summary-grid,.doc-grid,.form-grid{grid-template-columns:1fr}.profile-card{grid-template-columns:auto 1fr}.profile-card .btn{grid-column:1/-1}.topbar{flex-direction:column}.table-wrap th,.table-wrap td{white-space:nowrap}}
+.stat.clickable{cursor:pointer;transition:.18s}
+.stat.clickable:hover{transform:translateY(-3px)}
+.login-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.login-choice{padding:28px;text-align:center}
+.login-choice h3{margin:10px 0 6px}
+.login-choice p{color:var(--muted);font-size:13px;line-height:1.5}
+.request-card{padding:18px;margin-bottom:12px}
+.request-actions{display:flex;gap:8px;margin-top:12px}
+a.btn{text-decoration:none;display:inline-block}
+@media(max-width:760px){.login-grid{grid-template-columns:1fr}}
+
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+  <div class="brand"><div class="logo">SR</div><div><h1>SRPGE</h1><small>Société de Réalisation des Projets des Gabonais de l’Étranger</small></div></div>
+  <nav>
+    <button class="nav-btn active" data-view="dashboard">▦ Vue d’ensemble SRPGE</button>
+    <button class="nav-btn" data-view="account">◉ Mon compte</button>
+    <button class="nav-btn" data-view="register">＋ S’inscrire</button>
+    <button class="nav-btn" data-view="documents">▤ Documents officiels</button>
+    <button class="nav-btn" data-view="direction">◆ Direction</button>
+  </nav>
+  <div class="sidebar-note"><b>Version 1.1</b><br>Gestion des actionnaires, souscriptions et documents.</div>
+</aside>
+
+<main class="main">
+<div class="mobile-top"><strong>SRPGE</strong><button class="btn btn-primary" onclick="openBulletin()">Souscrire</button></div>
+<div class="topbar"><div><h2 id="pageTitle">Vue d’ensemble SRPGE</h2><p id="pageSubtitle">Situation générale des actionnaires et des souscriptions</p></div></div>
+
+<section class="view active" id="dashboard">
+  <div class="grid stats">
+    <div class="card stat clickable" onclick="openAllShareholders()"><div class="label">Actionnaires enregistrés</div><div class="value" id="shareholderCount">97</div><div class="meta">Cliquer pour consulter la liste</div></div>
+    <div class="card stat"><div class="label">Actions souscrites</div><div class="value" id="totalActions">0</div><div class="meta" id="totalCapital">0 FCFA</div></div>
+    <div class="card stat"><div class="label">Souscriptions en attente</div><div class="value" id="pendingCount">0</div><div class="meta" style="color:var(--orange)">À contrôler</div></div>
+    <div class="card stat"><div class="label">Documents conformes</div><div class="value">0%</div><div class="meta">Validation progressive</div></div>
+  </div>
+  <div class="grid two-col">
+    <div class="call-box">
+      <h3>Appel à souscription en cours</h3>
+      <p><b>G10 BTP SASU</b> ouvre une nouvelle phase de souscription afin de financer l’acquisition de matériel et le lancement de nouveaux chantiers.</p>
+      <div class="call-meta"><span class="call-chip">Objectif : 500 actions</span><span class="call-chip">Valeur : 100 000 FCFA/action</span><span class="call-chip">Statut : Ouvert</span></div>
+      <button class="btn btn-light" style="margin-top:17px" onclick="openBulletin()">Souscrire maintenant</button>
+    </div>
+    <div class="card panel"><div class="panel-head"><h3>Répartition par projet</h3></div>
+      <div class="project"><div class="project-row"><span>G10 Transports</span><b>0%</b></div><div class="progress"><span style="width:0%"></span></div></div>
+      <div class="project"><div class="project-row"><span>G10 BTP</span><b>0%</b></div><div class="progress"><span style="width:0%"></span></div></div>
+      <div class="project"><div class="project-row"><span>Village Agricole</span><b>0%</b></div><div class="progress"><span style="width:0%"></span></div></div>
+      <div class="project"><div class="project-row"><span>Autres projets</span><b>0%</b></div><div class="progress"><span style="width:0%"></span></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="view" id="account">
+  <div class="login-grid">
+    <div class="card login-choice"><div class="avatar" style="margin:auto">JEN</div><h3>Je suis déjà actionnaire</h3><p>Accéder à son espace personnel avec son identifiant SRPGE et son mot de passe.</p><button class="btn btn-primary" onclick="openLogin()">Se connecter</button></div>
+    <div class="card login-choice"><div class="avatar" style="margin:auto;background:linear-gradient(135deg,var(--green),var(--blue2))">＋</div><h3>Nouvel actionnaire</h3><p>Envoyer une demande d’inscription à la Direction avant l’ouverture du compte.</p><button class="btn btn-green" onclick="showView('register')">S’inscrire</button></div>
+  </div>
+</section>
+
+<section class="view" id="register">
+  <div class="card panel">
+    <div class="panel-head"><div><h3>Demande d’inscription</h3><p class="muted">La demande sera transmise à la Direction.</p></div><span class="badge warn">Validation obligatoire</span></div>
+    <form class="form-grid" onsubmit="submitRegistration(event)">
+      <div class="field"><label>Prénom 1</label><input name="prenom1" required></div>
+      <div class="field"><label>Prénom 2</label><input name="prenom2"></div>
+      <div class="field"><label>Nom 1</label><input name="nom1" required></div>
+      <div class="field"><label>Nom 2</label><input name="nom2"></div>
+      <div class="field"><label>Téléphone</label><input name="telephone" required></div>
+      <div class="field"><label>Courriel</label><input name="email" type="email" required></div>
+      <div class="field"><label>Pays de résidence</label><input name="pays" required></div>
+      <div class="field"><label>Nom WhatsApp</label><input name="whatsapp"></div>
+      <div class="field full"><label>Observation</label><textarea name="observation"></textarea></div>
+      <div class="field full"><button class="btn btn-primary" type="submit">Transmettre à la Direction</button></div>
+    </form>
+  </div>
+</section>
+
+<section class="view" id="documents">
+  <div class="grid doc-grid">
+    <div class="card doc"><div class="doc-icon">PDF</div><h4>Convention d’actionnaires</h4><p>Document officiel de gouvernance.</p><a class="btn btn-light" href="convention-actionnaires.pdf" target="_blank">Ouvrir</a></div>
+    <div class="card doc"><div class="doc-icon">PDF</div><h4>Statuts SRPGE</h4><p>Statuts officiels de la société.</p><a class="btn btn-light" href="statuts-srpge.pdf" target="_blank">Ouvrir</a></div>
+    <div class="card doc"><div class="doc-icon">PDF</div><h4>Bulletin vierge</h4><p>Modèle officiel du bulletin.</p><a class="btn btn-light" href="bulletin-vierge.pdf" target="_blank">Ouvrir</a></div>
+    <div class="card doc"><div class="doc-icon">WEB</div><h4>Bulletin intelligent</h4><p>Formulaire interactif avec les trois pages.</p><button class="btn btn-primary" onclick="openBulletin()">Remplir</button></div>
+  </div>
+</section>
+
+<section class="view" id="direction">
+  <div class="direction-tabs">
+    <button class="subtab active" data-sub="shareholders">Actionnaires</button>
+    <button class="subtab" data-sub="requests">Demandes d’inscription</button>
+    <button class="subtab" data-sub="subscriptions">Souscriptions</button>
+    <button class="subtab" data-sub="documentsAdmin">Documents</button>
+    <button class="subtab" data-sub="validation">Validations</button>
+  </div>
+  <div class="subview active" id="shareholders">
+    <div class="toolbar"><input id="directionSearch" class="search" placeholder="Rechercher un actionnaire…" oninput="renderDirectionShareholders(this.value)"></div>
+    <div class="card panel"><div class="panel-head"><h3>Liste des 97 actionnaires</h3><span class="badge info">Accès Direction</span></div><div class="table-wrap"><table><thead><tr><th>ID</th><th>Nom</th><th>Initiales</th><th>Téléphone</th><th>Pays</th><th>Statut</th></tr></thead><tbody id="directionBody"></tbody></table></div></div>
+  </div>
+  <div class="subview" id="requests"><div id="requestsList"></div></div>
+  <div class="subview" id="subscriptions"><div class="notice">Les souscriptions seront enregistrées ici après connexion Firebase.</div></div>
+  <div class="subview" id="documentsAdmin"><div class="grid doc-grid"><div class="card doc"><div class="doc-icon">PDF</div><h4>Documents officiels</h4><p>Convention, statuts et bulletin.</p><button class="btn btn-light" onclick="showView('documents')">Consulter</button></div></div></div>
+  <div class="subview" id="validation"><div class="notice">Aucun dossier en attente dans cette démonstration.</div></div>
+</section>
+</main>
+</div>
+
+<div class="modal" id="shareholdersModal"><div class="modal-card" style="max-width:1100px"><div class="modal-head"><div><h3 style="margin:0">Actionnaires enregistrés</h3><p class="muted" style="margin:5px 0 0">Liste générale sans nombre d’actions détenues.</p></div><button class="close" onclick="closeAllShareholders()">×</button></div><div class="toolbar"><input id="publicSearch" class="search" placeholder="Rechercher…" oninput="renderPublicShareholders(this.value)"></div><div class="table-wrap"><table><thead><tr><th>ID</th><th>Nom</th><th>Initiales</th><th>Pays</th><th>Statut</th></tr></thead><tbody id="publicBody"></tbody></table></div></div></div>
+
+<div class="modal" id="loginModal"><div class="modal-card" style="max-width:500px"><div class="modal-head"><h3 style="margin:0">Connexion actionnaire</h3><button class="close" onclick="closeLogin()">×</button></div><div class="notice">Démo : utilisez l’identifiant <b>SRPGE-001</b>.</div><div class="field"><label>Identifiant SRPGE</label><input id="loginId" value="SRPGE-001"></div><div class="field" style="margin-top:12px"><label>Mot de passe</label><input type="password"></div><button class="btn btn-primary" style="margin-top:18px" onclick="demoLogin()">Se connecter</button></div></div>
+
+<script>
+
+const titles={
+ dashboard:['Vue d’ensemble SRPGE','Situation générale des actionnaires et des souscriptions'],
+ account:['Mon compte','Accès personnel de l’actionnaire'],
+ register:['S’inscrire','Demande d’inscription d’un nouvel actionnaire'],
+ documents:['Documents officiels','Convention, statuts et bulletin de souscription'],
+ direction:['Direction','Gestion administrative, documents et validations']
+};
+const shareholders=[{"id": "SRPGE-001", "nom": "Judicael Edan Ngomo", "initiales": "JEN", "pays": "Canada", "telephone": "+1 778 808 2048", "statut": "Actif"}, {"id": "SRPGE-002", "nom": "Otilia Oddou", "initiales": "OO", "pays": "Canada", "telephone": "", "statut": "Actif"}, {"id": "SRPGE-003", "nom": "Kayla Oddou", "initiales": "KO", "pays": "Canada", "telephone": "", "statut": "Actif"}, {"id": "SRPGE-004", "nom": "Marie Josée Ayi Klutsch", "initiales": "MJAK", "pays": "Canada", "telephone": "", "statut": "Actif"}, {"id": "SRPGE-005", "nom": "Rémi Ona Mezui", "initiales": "ROM", "pays": "Gabon", "telephone": "", "statut": "Actif"}, {"id": "SRPGE-006", "nom": "Saint Pontien G10", "initiales": "SPG", "pays": "À compléter", "telephone": "", "statut": "Actif"}, {"id": "SRPGE-007", "nom": "Félicité", "initiales": "F", "pays": "Canada", "telephone": "", "statut": "Actif"}, {"id": "SRPGE-008", "nom": "Herlish Ondouo Olebe", "initiales": "HOO", "pays": "À compléter", "telephone": "", "statut": "Actif"}, {"id": "SRPGE-009", "nom": "JC Nzamba", "initiales": "JN", "pays": "À compléter", "telephone": "", "statut": "Actif"}, {"id": "SRPGE-010", "nom": "Kylian Ngomo", "initiales": "KN", "pays": "À compléter", "telephone": "", "statut": "Actif"}, {"id": "SRPGE-011", "nom": "Laetitia Klutsch", "initiales": "LK", "pays": "À compléter", "telephone": "", "statut": "Actif"}, {"id": "SRPGE-012", "nom": "Victorine Bella Mbeng", "initiales": "VBM", "pays": "À compléter", "telephone": "", "statut": "Actif"}, {"id": "SRPGE-013", "nom": "Valéry Ngomo", "initiales": "VN", "pays": "À compléter", "telephone": "", "statut": "Actif"}, {"id": "SRPGE-014", "nom": "Venus", "initiales": "", "pays": "À compléter", "telephone": "", "statut": "À vérifier"}, {"id": "SRPGE-015", "nom": "PSO", "initiales": "", "pays": "Canada/USA", "telephone": "+1 (347) 972-0359", "statut": "À vérifier"}, {"id": "SRPGE-016", "nom": "Paulette Oye Nguema", "initiales": "PON", "pays": "Canada/USA", "telephone": "+1 (520) 304-8697", "statut": "Actif"}, {"id": "SRPGE-017", "nom": "Manu da Graca", "initiales": "MDG", "pays": "Canada/USA", "telephone": "+1 (617) 955-5891", "statut": "Actif"}, {"id": "SRPGE-018", "nom": "Iwangou T", "initiales": "IT", "pays": "Guinée équatoriale", "telephone": "+240 222 422 384", "statut": "Actif"}, {"id": "SRPGE-019", "nom": "Nina", "initiales": "N", "pays": "France", "telephone": "+33 6 11 16 77 78", "statut": "Actif"}, {"id": "SRPGE-020", "nom": "Bertille Prunelle", "initiales": "BP", "pays": "France", "telephone": "+33 6 21 82 29 12", "statut": "Actif"}, {"id": "SRPGE-021", "nom": "Hortense Bella Sima Ameli", "initiales": "HBSA", "pays": "France", "telephone": "+33 6 25 17 37 08", "statut": "Actif"}, {"id": "SRPGE-022", "nom": "Sandya Pwaty", "initiales": "SP", "pays": "France", "telephone": "+33 6 25 45 62 82", "statut": "Actif"}, {"id": "SRPGE-023", "nom": "Ngwambot", "initiales": "N", "pays": "France", "telephone": "+33 6 31 35 57 27", "statut": "Actif"}, {"id": "SRPGE-024", "nom": "Amelie Ntsame Obiang", "initiales": "ANO", "pays": "France", "telephone": "+33 6 32 07 48 44", "statut": "Actif"}, {"id": "SRPGE-025", "nom": "Regina", "initiales": "R", "pays": "France", "telephone": "+33 6 41 29 28 29", "statut": "Actif"}, {"id": "SRPGE-026", "nom": "Catherine", "initiales": "C", "pays": "France", "telephone": "+33 6 69 47 46 54", "statut": "Actif"}, {"id": "SRPGE-027", "nom": "Duchesse D'Eves", "initiales": "DD", "pays": "France", "telephone": "+33 6 79 79 24 32", "statut": "Actif"}, {"id": "SRPGE-028", "nom": "Business Women", "initiales": "", "pays": "France", "telephone": "+33 7 49 95 66 57", "statut": "À vérifier"}, {"id": "SRPGE-029", "nom": "Jeannette Mefoumane", "initiales": "JM", "pays": "France", "telephone": "+33 7 50 70 10 96", "statut": "Actif"}, {"id": "SRPGE-030", "nom": "Raïvireee", "initiales": "", "pays": "France", "telephone": "+33 7 80 86 51 09", "statut": "À vérifier"}, {"id": "SRPGE-031", "nom": "Carine Mwana’a Mouélé", "initiales": "CMM", "pays": "France", "telephone": "+33 7 85 76 05 79", "statut": "Actif"}, {"id": "SRPGE-032", "nom": "Edgard Nang", "initiales": "EN", "pays": "Italie", "telephone": "+39 352 079 2416", "statut": "Actif"}, {"id": "SRPGE-033", "nom": "Yvette", "initiales": "Y", "pays": "Suisse", "telephone": "+41 78 698 61 06", "statut": "Actif"}, {"id": "SRPGE-034", "nom": "Loxodonta Africana", "initiales": "", "pays": "Royaume-Uni", "telephone": "+44 7410 978594", "statut": "À vérifier"}, {"id": "SRPGE-035", "nom": "+1 (202) 280-3678", "initiales": "", "pays": "Canada/USA", "telephone": "+1 (202) 280-3678", "statut": "À compléter"}, {"id": "SRPGE-036", "nom": "+1 (438) 622-9828", "initiales": "", "pays": "Canada/USA", "telephone": "+1 (438) 622-9828", "statut": "À compléter"}, {"id": "SRPGE-037", "nom": "+1 (438) 925-4730", "initiales": "", "pays": "Canada/USA", "telephone": "+1 (438) 925-4730", "statut": "À compléter"}, {"id": "SRPGE-038", "nom": "+1 (514) 549-0556", "initiales": "", "pays": "Canada/USA", "telephone": "+1 (514) 549-0556", "statut": "À compléter"}, {"id": "SRPGE-039", "nom": "+1 (514) 663-6551", "initiales": "", "pays": "Canada/USA", "telephone": "+1 (514) 663-6551", "statut": "À compléter"}, {"id": "SRPGE-040", "nom": "+1 (520) 226-6044", "initiales": "", "pays": "Canada/USA", "telephone": "+1 (520) 226-6044", "statut": "À compléter"}, {"id": "SRPGE-041", "nom": "+1 (581) 446-4508", "initiales": "", "pays": "Canada/USA", "telephone": "+1 (581) 446-4508", "statut": "À compléter"}, {"id": "SRPGE-042", "nom": "+1 (617) 595-9187", "initiales": "", "pays": "Canada/USA", "telephone": "+1 (617) 595-9187", "statut": "À compléter"}, {"id": "SRPGE-043", "nom": "+1 (617) 921-0229", "initiales": "", "pays": "Canada/USA", "telephone": "+1 (617) 921-0229", "statut": "À compléter"}, {"id": "SRPGE-044", "nom": "+1 (832) 870-3243", "initiales": "", "pays": "Canada/USA", "telephone": "+1 (832) 870-3243", "statut": "À compléter"}, {"id": "SRPGE-045", "nom": "+212 604-036775", "initiales": "", "pays": "Maroc", "telephone": "+212 604-036775", "statut": "À compléter"}, {"id": "SRPGE-046", "nom": "+212 618-314612", "initiales": "", "pays": "Maroc", "telephone": "+212 618-314612", "statut": "À compléter"}, {"id": "SRPGE-047", "nom": "+216 51 774 834", "initiales": "", "pays": "Tunisie", "telephone": "+216 51 774 834", "statut": "À compléter"}, {"id": "SRPGE-048", "nom": "+228 70 04 54 02", "initiales": "", "pays": "Togo", "telephone": "+228 70 04 54 02", "statut": "À compléter"}, {"id": "SRPGE-049", "nom": "+229 67 32 63 76", "initiales": "", "pays": "Bénin", "telephone": "+229 67 32 63 76", "statut": "À compléter"}, {"id": "SRPGE-050", "nom": "+233 20 941 4738", "initiales": "", "pays": "Ghana", "telephone": "+233 20 941 4738", "statut": "À compléter"}, {"id": "SRPGE-051", "nom": "+233 50 649 2321", "initiales": "", "pays": "Ghana", "telephone": "+233 50 649 2321", "statut": "À compléter"}, {"id": "SRPGE-052", "nom": "+233 54 931 2282", "initiales": "", "pays": "Ghana", "telephone": "+233 54 931 2282", "statut": "À compléter"}, {"id": "SRPGE-053", "nom": "+241 05 32 60 66", "initiales": "", "pays": "Gabon", "telephone": "+241 05 32 60 66", "statut": "À compléter"}, {"id": "SRPGE-054", "nom": "+241 07 49 99 52", "initiales": "", "pays": "Gabon", "telephone": "+241 07 49 99 52", "statut": "À compléter"}, {"id": "SRPGE-055", "nom": "+241 07 76 87 96", "initiales": "", "pays": "Gabon", "telephone": "+241 07 76 87 96", "statut": "À compléter"}, {"id": "SRPGE-056", "nom": "+241 07 82 44 65", "initiales": "", "pays": "Gabon", "telephone": "+241 07 82 44 65", "statut": "À compléter"}, {"id": "SRPGE-057", "nom": "+27 76 635 2515", "initiales": "", "pays": "Afrique du Sud", "telephone": "+27 76 635 2515", "statut": "À compléter"}, {"id": "SRPGE-058", "nom": "+33 6 12 89 19 55", "initiales": "", "pays": "France", "telephone": "+33 6 12 89 19 55", "statut": "À compléter"}, {"id": "SRPGE-059", "nom": "+33 6 13 89 63 33", "initiales": "", "pays": "France", "telephone": "+33 6 13 89 63 33", "statut": "À compléter"}, {"id": "SRPGE-060", "nom": "+33 6 16 84 12 62", "initiales": "", "pays": "France", "telephone": "+33 6 16 84 12 62", "statut": "À compléter"}, {"id": "SRPGE-061", "nom": "+33 6 20 56 21 64", "initiales": "", "pays": "France", "telephone": "+33 6 20 56 21 64", "statut": "À compléter"}, {"id": "SRPGE-062", "nom": "+33 6 21 23 58 16", "initiales": "", "pays": "France", "telephone": "+33 6 21 23 58 16", "statut": "À compléter"}, {"id": "SRPGE-063", "nom": "+33 6 22 51 23 57", "initiales": "", "pays": "France", "telephone": "+33 6 22 51 23 57", "statut": "À compléter"}, {"id": "SRPGE-064", "nom": "+33 6 27 28 14 76", "initiales": "", "pays": "France", "telephone": "+33 6 27 28 14 76", "statut": "À compléter"}, {"id": "SRPGE-065", "nom": "+33 6 34 61 59 79", "initiales": "", "pays": "France", "telephone": "+33 6 34 61 59 79", "statut": "À compléter"}, {"id": "SRPGE-066", "nom": "+33 6 35 26 45 10", "initiales": "", "pays": "France", "telephone": "+33 6 35 26 45 10", "statut": "À compléter"}, {"id": "SRPGE-067", "nom": "+33 6 35 34 51 00", "initiales": "", "pays": "France", "telephone": "+33 6 35 34 51 00", "statut": "À compléter"}, {"id": "SRPGE-068", "nom": "+33 6 41 15 90 14", "initiales": "", "pays": "France", "telephone": "+33 6 41 15 90 14", "statut": "À compléter"}, {"id": "SRPGE-069", "nom": "+33 6 41 99 98 81", "initiales": "", "pays": "France", "telephone": "+33 6 41 99 98 81", "statut": "À compléter"}, {"id": "SRPGE-070", "nom": "+33 6 42 45 50 21", "initiales": "", "pays": "France", "telephone": "+33 6 42 45 50 21", "statut": "À compléter"}, {"id": "SRPGE-071", "nom": "+33 6 44 02 13 94", "initiales": "", "pays": "France", "telephone": "+33 6 44 02 13 94", "statut": "À compléter"}, {"id": "SRPGE-072", "nom": "+33 6 44 06 51 63", "initiales": "", "pays": "France", "telephone": "+33 6 44 06 51 63", "statut": "À compléter"}, {"id": "SRPGE-073", "nom": "+33 6 49 66 08 51", "initiales": "", "pays": "France", "telephone": "+33 6 49 66 08 51", "statut": "À compléter"}, {"id": "SRPGE-074", "nom": "+33 6 50 66 61 42", "initiales": "", "pays": "France", "telephone": "+33 6 50 66 61 42", "statut": "À compléter"}, {"id": "SRPGE-075", "nom": "+33 6 51 17 68 18", "initiales": "", "pays": "France", "telephone": "+33 6 51 17 68 18", "statut": "À compléter"}, {"id": "SRPGE-076", "nom": "+33 6 51 42 40 38", "initiales": "", "pays": "France", "telephone": "+33 6 51 42 40 38", "statut": "À compléter"}, {"id": "SRPGE-077", "nom": "+33 6 61 25 43 39", "initiales": "", "pays": "France", "telephone": "+33 6 61 25 43 39", "statut": "À compléter"}, {"id": "SRPGE-078", "nom": "+33 6 62 14 63 01", "initiales": "", "pays": "France", "telephone": "+33 6 62 14 63 01", "statut": "À compléter"}, {"id": "SRPGE-079", "nom": "+33 6 62 89 65 68", "initiales": "", "pays": "France", "telephone": "+33 6 62 89 65 68", "statut": "À compléter"}, {"id": "SRPGE-080", "nom": "+33 6 63 88 93 51", "initiales": "", "pays": "France", "telephone": "+33 6 63 88 93 51", "statut": "À compléter"}, {"id": "SRPGE-081", "nom": "+33 6 65 77 96 43", "initiales": "", "pays": "France", "telephone": "+33 6 65 77 96 43", "statut": "À compléter"}, {"id": "SRPGE-082", "nom": "+33 6 76 94 78 22", "initiales": "", "pays": "France", "telephone": "+33 6 76 94 78 22", "statut": "À compléter"}, {"id": "SRPGE-083", "nom": "+33 6 89 31 53 29", "initiales": "", "pays": "France", "telephone": "+33 6 89 31 53 29", "statut": "À compléter"}, {"id": "SRPGE-084", "nom": "+33 6 95 45 59 75", "initiales": "", "pays": "France", "telephone": "+33 6 95 45 59 75", "statut": "À compléter"}, {"id": "SRPGE-085", "nom": "+33 7 49 26 06 52", "initiales": "", "pays": "France", "telephone": "+33 7 49 26 06 52", "statut": "À compléter"}, {"id": "SRPGE-086", "nom": "+33 7 51 44 28 45", "initiales": "", "pays": "France", "telephone": "+33 7 51 44 28 45", "statut": "À compléter"}, {"id": "SRPGE-087", "nom": "+33 7 53 66 01 74", "initiales": "", "pays": "France", "telephone": "+33 7 53 66 01 74", "statut": "À compléter"}, {"id": "SRPGE-088", "nom": "+33 7 55 37 93 49", "initiales": "", "pays": "France", "telephone": "+33 7 55 37 93 49", "statut": "À compléter"}, {"id": "SRPGE-089", "nom": "+33 7 58 05 08 64", "initiales": "", "pays": "France", "telephone": "+33 7 58 05 08 64", "statut": "À compléter"}, {"id": "SRPGE-090", "nom": "+33 7 60 17 51 67", "initiales": "", "pays": "France", "telephone": "+33 7 60 17 51 67", "statut": "À compléter"}, {"id": "SRPGE-091", "nom": "+33 7 82 18 87 14", "initiales": "", "pays": "France", "telephone": "+33 7 82 18 87 14", "statut": "À compléter"}, {"id": "SRPGE-092", "nom": "+39 333 446 8084", "initiales": "", "pays": "Italie", "telephone": "+39 333 446 8084", "statut": "À compléter"}, {"id": "SRPGE-093", "nom": "+39 347 999 9780", "initiales": "", "pays": "Italie", "telephone": "+39 347 999 9780", "statut": "À compléter"}, {"id": "SRPGE-094", "nom": "+41 76 429 83 45", "initiales": "", "pays": "Suisse", "telephone": "+41 76 429 83 45", "statut": "À compléter"}, {"id": "SRPGE-095", "nom": "+41 79 229 15 47", "initiales": "", "pays": "Suisse", "telephone": "+41 79 229 15 47", "statut": "À compléter"}, {"id": "SRPGE-096", "nom": "+44 7462 009491", "initiales": "", "pays": "Royaume-Uni", "telephone": "+44 7462 009491", "statut": "À compléter"}, {"id": "SRPGE-097", "nom": "+44 7500 350517", "initiales": "", "pays": "Royaume-Uni", "telephone": "+44 7500 350517", "statut": "À compléter"}];
+let requests=JSON.parse(localStorage.getItem('srpge_requests')||'[]');
+
+document.querySelectorAll('.nav-btn').forEach(btn=>btn.addEventListener('click',()=>showView(btn.dataset.view)));
+document.querySelectorAll('.subtab').forEach(btn=>btn.addEventListener('click',()=>showSub(btn.dataset.sub)));
+
+document.getElementById('shareholderCount').textContent=shareholders.length;
+renderDirectionShareholders();
+
+function showView(id){
+ document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+ document.getElementById(id).classList.add('active');
+ document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.view===id));
+ document.getElementById('pageTitle').textContent=titles[id][0];
+ document.getElementById('pageSubtitle').textContent=titles[id][1];
+}
+function showSub(id){
+ document.querySelectorAll('.subview').forEach(v=>v.classList.remove('active'));
+ document.getElementById(id).classList.add('active');
+ document.querySelectorAll('.subtab').forEach(b=>b.classList.toggle('active',b.dataset.sub===id));
+ if(id==='requests') renderRequests();
+}
+function openBulletin(){window.open('bulletin-intelligent.html','_blank')}
+function filterList(q=''){
+ q=q.toLowerCase().trim();
+ return shareholders.filter(s=>!q||[s.id,s.nom,s.initiales,s.pays,s.telephone].join(' ').toLowerCase().includes(q));
+}
+function badge(s){return `<span class="badge ${s==='Actif'?'ok':'warn'}">${s}</span>`}
+function renderDirectionShareholders(q=''){
+ document.getElementById('directionBody').innerHTML=filterList(q).map(s=>`<tr><td>${s.id}</td><td>${s.nom}</td><td><b>${s.initiales||'—'}</b></td><td>${s.telephone||'—'}</td><td>${s.pays}</td><td>${badge(s.statut)}</td></tr>`).join('');
+}
+function renderPublicShareholders(q=''){
+ document.getElementById('publicBody').innerHTML=filterList(q).map(s=>`<tr><td>${s.id}</td><td>${s.nom}</td><td><b>${s.initiales||'À compléter'}</b></td><td>${s.pays}</td><td>${badge(s.statut)}</td></tr>`).join('');
+}
+function openAllShareholders(){renderPublicShareholders();document.getElementById('shareholdersModal').classList.add('open')}
+function closeAllShareholders(){document.getElementById('shareholdersModal').classList.remove('open')}
+function openLogin(){document.getElementById('loginModal').classList.add('open')}
+function closeLogin(){document.getElementById('loginModal').classList.remove('open')}
+function demoLogin(){
+ const id=document.getElementById('loginId').value.trim().toUpperCase();
+ const s=shareholders.find(x=>x.id===id);
+ if(!s)return alert('Identifiant introuvable.');
+ closeLogin(); alert('Bienvenue '+s.nom+'. Firebase Authentication sera activé ensuite.');
+}
+function submitRegistration(e){
+ e.preventDefault(); const f=new FormData(e.target); const r=Object.fromEntries(f.entries());
+ r.status='En attente'; r.date=new Date().toLocaleString('fr-FR'); requests.push(r);
+ localStorage.setItem('srpge_requests',JSON.stringify(requests)); e.target.reset();
+ alert('La demande a été transmise à la Direction.'); showView('dashboard');
+}
+function renderRequests(){
+ const el=document.getElementById('requestsList');
+ if(!requests.length){el.innerHTML='<div class="notice">Aucune demande d’inscription.</div>';return}
+ el.innerHTML=requests.map((r,i)=>`<div class="card request-card"><b>${r.prenom1} ${r.prenom2||''} ${r.nom1} ${r.nom2||''}</b><p class="muted">${r.telephone} · ${r.email} · ${r.pays}</p><span class="badge ${r.status==='Validée'?'ok':r.status==='Refusée'?'bad':'warn'}">${r.status}</span><div class="request-actions"><button class="btn btn-green" onclick="validateRequest(${i})">Valider</button><button class="btn btn-danger" onclick="rejectRequest(${i})">Refuser</button></div></div>`).join('');
+}
+function validateRequest(i){requests[i].status='Validée';localStorage.setItem('srpge_requests',JSON.stringify(requests));renderRequests()}
+function rejectRequest(i){requests[i].status='Refusée';localStorage.setItem('srpge_requests',JSON.stringify(requests));renderRequests()}
+window.addEventListener('click',e=>{if(e.target.classList.contains('modal'))e.target.classList.remove('open')});
+
+</script>
+</body>
+</html>
