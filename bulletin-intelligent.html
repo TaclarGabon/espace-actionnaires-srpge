@@ -61,7 +61,7 @@ main{padding:22px;overflow:auto}.step{font-size:12px;text-transform:uppercase;co
 </div>
 <div class="hint">Les initiales sont calculées automatiquement avec le premier prénom puis les noms. Exemple : <b>Judicael + EDAN + NGOMO = JEN</b>.</div>
 <div class="summary"><div class="metric"><b id="mMontant">0</b><span>Montant de la nouvelle souscription (FCFA)</span></div><div class="metric"><b id="mTotalActions">0</b><span>Total d'actions après souscription</span></div></div>
-<div class="buttons"><button class="btn secondary" onclick="resetForm()">Réinitialiser</button><button class="btn primary" onclick="saveDraft()">Enregistrer</button><button class="btn green" onclick="validatePreview()">Valider et afficher les 3 pages</button></div>
+<div class="buttons"><button class="btn secondary" onclick="resetForm()">Réinitialiser</button><button class="btn primary" onclick="saveDraft()">Enregistrer</button><button class="btn green" onclick="validatePreview()">Valider définitivement le bulletin</button></div>
 </aside>
 <main>
 <div class="toolbar"><div><h1>Aperçu du bulletin</h1><p>Les champs se mettent à jour automatiquement dans le document officiel.</p></div><div class="toolbar-actions"><button onclick="window.print()">Imprimer / Enregistrer en PDF</button><button onclick="zoomToggle()" id="zoomBtn">Agrandir</button></div></div>
@@ -122,7 +122,47 @@ ids.forEach(id=>$(id).addEventListener('input',update));$('paiement').addEventLi
 function saveDraft(){let data={};ids.forEach(id=>data[id]=$(id).value);data.lu=$('lu').checked;data.consent=$('consent').checked;localStorage.setItem('srpgeBulletinDraft',JSON.stringify(data));alert('Brouillon enregistré sur cet appareil.');}
 function loadDraft(){let raw=localStorage.getItem('srpgeBulletinDraft');if(!raw)return;try{let d=JSON.parse(raw);ids.forEach(id=>{if(d[id]!==undefined)$(id).value=d[id]});$('lu').checked=d.lu!==false;$('consent').checked=d.consent!==false}catch(e){}}
 function resetForm(){if(confirm('Effacer entièrement le formulaire ?')){localStorage.removeItem('srpgeBulletinDraft');document.querySelectorAll('input:not([readonly]), select').forEach(el=>{if(el.type==='checkbox')el.checked=false;else el.value=''});update()}}
-function validatePreview(){if(!$('prenom1').value.trim()||!$('nom1').value.trim()){alert('Le prénom 1 et le nom 1 sont obligatoires.');return}if(!$('lu').checked||!$('consent').checked){alert('Merci de confirmer la lecture et la validation électronique.');return}update();document.querySelector('main').scrollIntoView({behavior:'smooth'});setTimeout(()=>alert('Bulletin validé pour aperçu. Les trois pages sont prêtes à être imprimées ou enregistrées en PDF.'),350)}
+function validatePreview(){
+  if(!$('prenom1').value.trim()||!$('nom1').value.trim()){
+    alert('Le prénom 1 et le nom 1 sont obligatoires.');
+    return;
+  }
+  if(!$('lu').checked||!$('consent').checked){
+    alert('Merci de confirmer la lecture et la validation électronique.');
+    return;
+  }
+
+  update();
+  let draft={};
+  ids.forEach(id=>draft[id]=$(id).value);
+  draft.lu=$('lu').checked;
+  draft.consent=$('consent').checked;
+  localStorage.setItem('srpgeBulletinDraft',JSON.stringify(draft));
+
+  let prefill={};
+  try{
+    prefill=JSON.parse(localStorage.getItem('srpge_bulletin_prefill')||'{}');
+  }catch(error){}
+
+  const completion={
+    subscriptionId:prefill.subscriptionId||'',
+    completedDate:new Date().toLocaleDateString('fr-FR'),
+    beneficiary:(prefill.enfantNom&&prefill.enfantNom.trim())?'Enfant mineur':'Moi-même',
+    documentRef:prefill.bulletin||'Bulletin SRPGE',
+    completedAt:new Date().toISOString()
+  };
+
+  localStorage.setItem('srpge_bulletin_completed',JSON.stringify(completion));
+
+  if(window.opener && !window.opener.closed){
+    try{
+      window.opener.postMessage({type:'SRPGE_BULLETIN_COMPLETED',data:completion},'*');
+    }catch(error){}
+  }
+
+  alert('Bulletin validé. Le statut de votre souscription va passer automatiquement à « Complété ».');
+  setTimeout(()=>window.close(),500);
+}
 let zoomed=false;function zoomToggle(){zoomed=!zoomed;$('pages').style.gridTemplateColumns=zoomed?'1fr':'repeat(3,minmax(260px,1fr))';$('zoomBtn').textContent=zoomed?'Vue 3 pages':'Agrandir'}
 (function(){localStorage.removeItem('srpgeBulletinDraft');update()})();
 

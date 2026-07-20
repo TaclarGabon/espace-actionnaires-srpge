@@ -356,7 +356,7 @@ function saveLine(){
   if(!project) return alert('Veuillez sélectionner une filiale.');
   if(!Number.isInteger(shares) || shares < 1) return alert('Veuillez saisir un nombre d’actions valide.');
 
-  const entry = {project, shares, unitPrice: PRICE, total: shares * PRICE, status:'À compléter', completedDate:'', beneficiary:'', documentRef:''};
+  const entry = {id:(crypto.randomUUID?crypto.randomUUID():'sub-'+Date.now()+'-'+Math.random().toString(36).slice(2)),project, shares, unitPrice: PRICE, total: shares * PRICE, status:'À compléter', completedDate:'', beneficiary:'', documentRef:''};
   if(editingIndex === null) lines.push(entry);
   else lines[editingIndex] = entry;
 
@@ -474,7 +474,10 @@ function completeBulletin(){
   if(isMinor && !document.getElementById('minorName').value.trim()) return alert("Veuillez renseigner le nom de l'enfant.");
   const payload=buildBulletinPayload();
   localStorage.setItem('srpge_bulletin_prefill',JSON.stringify(payload));
-  window.open('bulletin-intelligent.html','_blank');
+  localStorage.removeItem('srpge_bulletin_completed');
+  closeModal('bulletinModal');
+  const bulletinWindow=window.open('bulletin-intelligent.html','srpgeBulletinWindow');
+  if(!bulletinWindow) alert('Le navigateur a bloqué l’ouverture du bulletin. Autorisez les fenêtres contextuelles pour ce site.');
 }
 function profileData(){
   return {
@@ -508,6 +511,7 @@ function buildBulletinPayload(){
   const isMinor=document.getElementById('beneficiaryType').value==='minor';
   const initials=[prenom1,nom1,nom2].filter(Boolean).map(x=>x[0].toUpperCase()).join('');
   return {
+    subscriptionId:item.id,
     prenom1,prenom2:'',nom1,nom2,
     naissanceNom:p.birthName,dateNaissance:p.birthDate,lieuNaissance:p.birthPlace,nationalite:p.nationality,
     piece:p.idType,pieceNo:p.idNumber,pieceDu:p.issueDate,pieceVal:p.expiryDate,
@@ -550,8 +554,62 @@ async function persistSubscriptions(message){
     alert('La ligne est visible, mais Firebase a retourné une erreur : '+e.message);
   }
 }
+
+function applyBulletinCompletion(data){
+  if(!data || !data.subscriptionId) return;
+  const index=lines.findIndex(item=>item.id===data.subscriptionId);
+  if(index<0) return;
+
+  lines[index].status='Complété';
+  lines[index].completedDate=data.completedDate || new Date().toLocaleDateString('fr-FR');
+  lines[index].beneficiary=data.beneficiary || lines[index].beneficiary || 'Moi-même';
+  lines[index].documentRef=data.documentRef || lines[index].documentRef || ('Bulletin-'+(index+1));
+
+  render();
+  if(window.firebaseApi){
+    window.firebaseApi.saveSubscriptions(lines)
+      .then(()=>console.log('Statut du bulletin enregistré dans Firebase.'))
+      .catch(error=>alert('Le statut a été mis à jour, mais Firebase a retourné une erreur : '+error.message));
+  }
+}
+
+function checkBulletinCompletion(){
+  const raw=localStorage.getItem('srpge_bulletin_completed');
+  if(!raw) return;
+  try{
+    const data=JSON.parse(raw);
+    applyBulletinCompletion(data);
+    localStorage.removeItem('srpge_bulletin_completed');
+  }catch(error){
+    console.error(error);
+  }
+}
+
+window.addEventListener('message',event=>{
+  const message=event.data||{};
+  if(message.type==='SRPGE_BULLETIN_COMPLETED'){
+    applyBulletinCompletion(message.data);
+    localStorage.removeItem('srpge_bulletin_completed');
+  }
+});
+window.addEventListener('storage',event=>{
+  if(event.key==='srpge_bulletin_completed' && event.newValue){
+    try{
+      applyBulletinCompletion(JSON.parse(event.newValue));
+      localStorage.removeItem('srpge_bulletin_completed');
+    }catch(error){console.error(error)}
+  }
+});
+window.addEventListener('focus',()=>setTimeout(checkBulletinCompletion,150));
+
 window.srpgeBridge={
-  setLines:(v)=>{lines=Array.isArray(v)?v:[];render();},
+  setLines:(v)=>{
+    lines=(Array.isArray(v)?v:[]).map((item,i)=>({
+      ...item,
+      id:item.id || ('legacy-'+Date.now()+'-'+i+'-'+Math.random().toString(36).slice(2))
+    }));
+    render();
+  },
   applyProfile:(p)=>{
     const map={pFullName:'fullName',pBirthName:'birthName',pBirthDate:'birthDate',pBirthPlace:'birthPlace',pNationality:'nationality',pIdType:'idType',pIdNumber:'idNumber',pIssueDate:'issueDate',pExpiryDate:'expiryDate',pAddress:'address',pPostal:'postal',pCity:'city',pCountry:'country',pPhone:'phone',pEmail:'email'};
     Object.entries(map).forEach(([id,key])=>{const el=document.getElementById(id);if(el&&p&&p[key]!==undefined)el.value=p[key];});
