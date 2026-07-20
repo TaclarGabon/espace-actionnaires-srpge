@@ -125,5 +125,17 @@ function resetForm(){if(confirm('Effacer entièrement le formulaire ?')){localSt
 function validatePreview(){if(!$('prenom1').value.trim()||!$('nom1').value.trim()){alert('Le prénom 1 et le nom 1 sont obligatoires.');return}if(!$('lu').checked||!$('consent').checked){alert('Merci de confirmer la lecture et la validation électronique.');return}update();document.querySelector('main').scrollIntoView({behavior:'smooth'});setTimeout(()=>alert('Bulletin validé pour aperçu. Les trois pages sont prêtes à être imprimées ou enregistrées en PDF.'),350)}
 let zoomed=false;function zoomToggle(){zoomed=!zoomed;$('pages').style.gridTemplateColumns=zoomed?'1fr':'repeat(3,minmax(260px,1fr))';$('zoomBtn').textContent=zoomed?'Vue 3 pages':'Agrandir'}
 (function(){localStorage.removeItem('srpgeBulletinDraft');update()})();
+
+(function(){
+  try{
+    const raw=localStorage.getItem('srpge_bulletin_prefill');
+    if(!raw)return;
+    const d=JSON.parse(raw);
+    const set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v??'';};
+    ['prenom1','prenom2','nom1','nom2','naissanceNom','dateNaissance','lieuNaissance','nationalite','piece','pieceNo','pieceDu','pieceVal','adresse','cp','ville','pays','tel','email','bulletin','projet','demande','actions','actionsAvant','paiement','enfantNom','enfantDate','enfantLieu','enfantNat','faitA','faitDate'].forEach(id=>set(id,d[id]));
+    if(typeof update==='function')update();
+  }catch(e){console.error(e)}
+})();
+
 </script>
 </body></html>
