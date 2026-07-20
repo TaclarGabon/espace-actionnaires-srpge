@@ -1,31 +1,11 @@
-# Espace Actionnaires SRPGE — Version 1.1
+# Espace Actionnaires SRPGE — Version 1.3
 
-Cette version a été simplifiée pour le téléversement GitHub.
+Corrections :
+- suppression du doublon « Nouvel actionnaire » dans Mon compte ;
+- documents classés : 1 Bulletin intelligent, 2 Bulletin vierge, 3 Convention, 4 Statuts ;
+- connexion de démonstration ouvrant réellement la fiche de l’actionnaire ;
+- bulletin intelligent vierge.
 
-## Fichiers à déposer à la racine du dépôt
-
-- index.html
-- bulletin-intelligent.html
-- convention-actionnaires.pdf
-- statuts-srpge.pdf
-- bulletin-vierge.pdf
-- firebase-config.js
-- README.md
-
-Aucun dossier n'est nécessaire.
-
-## Publication
-
-1. Dans GitHub, supprimer les anciens fichiers incorrects si nécessaire.
-2. Cliquer sur **Add file > Upload files**.
-3. Déposer les sept fichiers ci-dessus.
-4. Cliquer sur **Commit changes**.
-5. Dans **Settings > Pages**, conserver :
-   - Deploy from a branch
-   - main
-   - /(root)
-
-Adresse :
-https://taclargabon.github.io/espace-actionnaires-srpge/
-
-Le bulletin intelligent s'ouvre dans un nouvel onglet pour éviter les blocages d'iframe.
+Pour GitHub : remplacez les sept fichiers à la racine.
+Identifiant de test : SRPGE-001. Saisissez n’importe quel mot de passe non vide pour la démonstration locale.
+La sécurité réelle exigera Firebase Authentication et Firestore.
