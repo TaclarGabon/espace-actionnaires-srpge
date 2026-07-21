@@ -561,12 +561,18 @@ function editLine(index){
   document.getElementById('addBtn').className = 'btn btn-orange';
   document.getElementById('subscriptionForm').scrollIntoView({behavior:'smooth'});
 }
-function deleteLine(index){
-  if(confirm('Supprimer cette ligne de souscription ?')){
-    lines.splice(index,1);
-    if(editingIndex === index) resetForm();
-    render();
-    if(window.firebaseApi) window.firebaseApi.saveSubscriptions(lines).catch(console.error);
+async function deleteLine(index){
+  if(!confirm('Supprimer cette ligne de souscription ?')) return;
+  lines.splice(index,1);
+  if(editingIndex === index) resetForm();
+  localStorage.setItem('srpge_subscriptions_backup', JSON.stringify(lines));
+  localStorage.setItem('srpge_local_mutation_at', String(Date.now()));
+  render();
+  try{
+    if(window.firebaseApi) await window.firebaseApi.saveSubscriptions(JSON.parse(JSON.stringify(lines)));
+  }catch(error){
+    console.error(error);
+    alert('La ligne reste supprimée sur cet appareil. Firebase n’a pas accepté la synchronisation : ' + (error?.message || error));
   }
 }
 async function clearAll(){
@@ -597,11 +603,15 @@ async function clearAll(){
     alert('Toutes les souscriptions ont été effacées.');
   }catch(error){
     console.error(error);
-    // En cas d’échec Firebase, on restaure les lignes pour éviter une fausse suppression.
-    lines = previousLines;
-    localStorage.setItem('srpge_subscriptions_backup', JSON.stringify(lines));
+    // Mode démo sécurisé : conserver l’écran vierge localement, même si Firebase refuse l’écriture.
+    // Un marqueur par compte empêchera l’ancienne liste distante de réapparaître au prochain chargement.
+    if(window.firebaseApi?.markSubscriptionsClearedLocally){
+      window.firebaseApi.markSubscriptionsClearedLocally();
+    }
+    lines = [];
+    localStorage.setItem('srpge_subscriptions_backup', '[]');
     render();
-    alert('La suppression n’a pas pu être enregistrée. Les souscriptions ont été restaurées. ' + (error?.message || error));
+    alert('Les souscriptions sont effacées sur cet appareil. Firebase a refusé la synchronisation, mais l’ancien dossier ne réapparaîtra plus ici.');
   }
 }
 function render(){
@@ -1034,6 +1044,11 @@ function summarizeSubscriptions(subscriptions=[]){
 }
 
 const LOCAL_SUMMARY_KEY="srpge_demo_summaries_v311b";
+const LOCAL_CLEAR_PREFIX="srpge_subscriptions_cleared_v311c_";
+function localClearKey(user){return LOCAL_CLEAR_PREFIX+(user?.uid||"anonymous");}
+function isLocallyCleared(user){return localStorage.getItem(localClearKey(user))==="1";}
+function markLocallyCleared(user){if(user) localStorage.setItem(localClearKey(user),"1");}
+function unmarkLocallyCleared(user){if(user) localStorage.removeItem(localClearKey(user));}
 function getLocalSummaries(){
   try{return JSON.parse(localStorage.getItem(LOCAL_SUMMARY_KEY)||"{}")||{}}catch(e){return {}}
 }
@@ -1110,9 +1125,10 @@ async function loadUserData(user){
     const data = snap.data();
     const role=isDirectionEmail(user.email)?"direction":(data.role||"actionnaire");
     if(data.role!==role) await setDoc(ref,{role,updatedAt:serverTimestamp()},{merge:true});
+    const effectiveSubscriptions=isLocallyCleared(user)?[]:(data.subscriptions || []);
     window.srpgeBridge?.applyProfile(data.profile || {});
-    window.srpgeBridge?.setLines(data.subscriptions || []);
-    saveLocalSummary(user,data.subscriptions || []);
+    window.srpgeBridge?.setLines(effectiveSubscriptions);
+    saveLocalSummary(user,effectiveSubscriptions);
     window.setCurrentUserContext?.({email:user.email,role,isDirection:role==="direction"});
   }else{
     const role=isDirectionEmail(user.email)?"direction":"actionnaire";
@@ -1143,13 +1159,19 @@ window.firebaseApi = {
   async saveSubscriptions(subscriptions){
     const user = auth.currentUser;
     if(!user) throw new Error("Utilisateur non connecté.");
+    const clean=Array.isArray(subscriptions)?subscriptions:[];
+    if(clean.length===0) markLocallyCleared(user); else unmarkLocallyCleared(user);
+    saveLocalSummary(user,clean);
+    if(isDirectionEmail(user.email)) loadDirectionDashboard();
     await setDoc(doc(db, "srpge_users", user.uid), {
       email:user.email,
-      subscriptions,
+      subscriptions:clean,
       updatedAt:serverTimestamp()
     }, {merge:true});
-    saveLocalSummary(user,subscriptions);
-    if(isDirectionEmail(user.email)) loadDirectionDashboard();
+  },
+  markSubscriptionsClearedLocally(){
+    const user=auth.currentUser;
+    if(user){markLocallyCleared(user);saveLocalSummary(user,[]);}
   },
   async reloadSubscriptions(){
     const user = auth.currentUser;
