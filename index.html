@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>SRPGE — Prévisualisation Mon compte</title>
+<title>SRPGE — V3.11 Multiutilisateurs</title>
 <style>
 :root{
   --blue:#174a7e;--blue2:#2468a6;--light:#f4f7fb;--white:#fff;--text:#17233a;
@@ -220,6 +220,21 @@ input,select,textarea,button{max-width:100%;min-width:0}
   #previewModal .modal-card{width:100%!important;max-width:100%!important;height:96vh!important}
   #realBulletinFrame{width:100%!important;max-width:100%!important}
 }
+
+
+/* V3.11 — multiutilisateurs et tableau de bord Direction */
+.view-hidden{display:none!important}
+.direction-dashboard{display:none}
+.dashboard-kpis{grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:18px}
+.dashboard-kpi{padding:18px}.dashboard-kpi span{display:block;color:var(--muted);font-size:12px;font-weight:800;margin-bottom:7px}.dashboard-kpi strong{font-size:26px;color:var(--blue)}
+.dashboard-projects{display:grid;gap:12px}.dashboard-project-row{display:grid;grid-template-columns:minmax(170px,1.4fr) 2fr auto;gap:14px;align-items:center;padding:14px;border:1px solid var(--border);border-radius:14px;background:#fff}
+.dashboard-project-row .bar{height:12px;background:#e9eef5;border-radius:999px;overflow:hidden}.dashboard-project-row .bar>span{display:block;height:100%;background:linear-gradient(90deg,var(--blue2),var(--green));border-radius:999px}
+.dashboard-project-row .numbers{text-align:right;font-weight:800;color:var(--blue)}
+.dashboard-note{padding:13px 15px;border-radius:12px;background:#eef5fc;color:#174a7e;border:1px solid #cfdef0;margin-bottom:16px;font-size:13px}
+.role-pill{display:inline-flex;padding:5px 9px;border-radius:999px;background:#e9f1fb;color:#2e65a1;font-size:11px;font-weight:900;margin-left:8px}
+@media(max-width:900px){.dashboard-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.dashboard-project-row{grid-template-columns:1fr}.dashboard-project-row .numbers{text-align:left}}
+@media(max-width:520px){.dashboard-kpis{grid-template-columns:1fr}}
+
 </style>
 </head>
 <body>
@@ -254,14 +269,26 @@ input,select,textarea,button{max-width:100%;min-width:0}
   <aside class="sidebar">
     <div class="brand"><div class="logo">SR</div><div><h1>SRPGE</h1><small>Société de Réalisation des Projets des Gabonais de l’Étranger</small></div></div>
     <nav>
-      <button class="nav-btn">▦ Vue d’ensemble SRPGE</button>
-      <button class="nav-btn active">◉ Mon compte</button>
+      <button class="nav-btn" id="dashboardNavBtn" style="display:none" onclick="showAppView('dashboard')">▦ Tableau de bord Direction</button>
+      <button class="nav-btn active" id="accountNavBtn" onclick="showAppView('account')">◉ Mon compte</button>
       <button class="nav-btn">▤ Documents officiels</button>
     </nav>
-    <div class="sidebar-note"><b>Prévisualisation</b><br>Gestion personnelle des souscriptions avant Firebase.</div>
+    <div class="sidebar-note"><b>Version 3.11</b><br>Comptes séparés et statistiques globales anonymisées.</div>
   </aside>
 
   <main class="main">
+    <section id="dashboardView" class="direction-dashboard">
+      <div class="topbar"><div><h2>Tableau de bord Direction</h2><p>Vue globale et anonymisée des souscriptions enregistrées par les différents comptes.</p></div><button class="btn btn-light" onclick="window.refreshDirectionDashboard && window.refreshDirectionDashboard()">↻ Actualiser</button></div>
+      <div class="dashboard-note">Les actionnaires ordinaires ne voient pas les noms, adresses, pièces d’identité ou bulletins des autres comptes. Cette vue additionne uniquement les souscriptions par filiale.</div>
+      <div class="grid dashboard-kpis">
+        <div class="card dashboard-kpi"><span>Comptes ayant souscrit</span><strong id="dashUsers">0</strong></div>
+        <div class="card dashboard-kpi"><span>Actions souscrites</span><strong id="dashShares">0</strong></div>
+        <div class="card dashboard-kpi"><span>Montant théorique</span><strong id="dashAmount">0 FCFA</strong></div>
+        <div class="card dashboard-kpi"><span>Filiales concernées</span><strong id="dashProjects">0</strong></div>
+      </div>
+      <div class="card panel"><div class="panel-head"><div><h3>Répartition par filiale</h3><p class="muted">Nombre d’actions et pourcentage dans l’ensemble des souscriptions.</p></div></div><div id="dashboardProjectsList" class="dashboard-projects"><div class="empty">Aucune souscription globale enregistrée.</div></div></div>
+    </section>
+    <section id="accountView">
     <div class="topbar">
       <div><h2>Mon compte</h2><p>Gérer mes actions, mes souscriptions et mes documents.</p></div>
     </div>
@@ -382,7 +409,8 @@ input,select,textarea,button{max-width:100%;min-width:0}
         <div class="card empty">Le résumé apparaîtra après l’ajout d’une souscription.</div>
       </div>
     </div>
-  </main>
+      </section>
+</main>
 </div>
 
 <div class="modal" id="bulletinModal">
@@ -541,13 +569,39 @@ function deleteLine(index){
     if(window.firebaseApi) window.firebaseApi.saveSubscriptions(lines).catch(console.error);
   }
 }
-function clearAll(){
-  if(!lines.length) return;
-  if(confirm('Supprimer toutes les lignes de souscription ?')){
-    lines = [];
-    resetForm();
+async function clearAll(){
+  if(!lines.length){
+    localStorage.removeItem('srpge_subscriptions_backup');
+    return;
+  }
+  if(!confirm('Supprimer définitivement toutes les lignes de souscription ?')) return;
+
+  const previousLines = JSON.parse(JSON.stringify(lines));
+  lines = [];
+  editingIndex = null;
+
+  // Effacement immédiat sur cet appareil. Sans cela, la sauvegarde locale
+  // pouvait restaurer les anciennes lignes juste après leur suppression.
+  localStorage.setItem('srpge_subscriptions_backup', '[]');
+  localStorage.setItem('srpge_local_mutation_at', String(Date.now()));
+  localStorage.setItem('srpge_status_sync', JSON.stringify({type:'all-cleared', at:Date.now()}));
+
+  resetForm();
+  render();
+
+  try{
+    if(window.firebaseApi){
+      await window.firebaseApi.saveSubscriptions([]);
+    }
+    window.srpgeStatusChannel?.postMessage({type:'subscriptions-cleared'});
+    alert('Toutes les souscriptions ont été effacées.');
+  }catch(error){
+    console.error(error);
+    // En cas d’échec Firebase, on restaure les lignes pour éviter une fausse suppression.
+    lines = previousLines;
+    localStorage.setItem('srpge_subscriptions_backup', JSON.stringify(lines));
     render();
-    if(window.firebaseApi) window.firebaseApi.saveSubscriptions(lines).catch(console.error);
+    alert('La suppression n’a pas pu être enregistrée. Les souscriptions ont été restaurées. ' + (error?.message || error));
   }
 }
 function render(){
@@ -913,6 +967,29 @@ window.srpgeBridge={
     Object.entries(map).forEach(([id,key])=>{const el=document.getElementById(id);if(el&&p&&p[key]!==undefined)el.value=p[key];});
   }
 };
+
+function showAppView(view){
+  const dashboard=document.getElementById('dashboardView');
+  const account=document.getElementById('accountView');
+  const dashBtn=document.getElementById('dashboardNavBtn');
+  const accountBtn=document.getElementById('accountNavBtn');
+  const isDash=view==='dashboard' && dashBtn && dashBtn.style.display!=='none';
+  if(dashboard) dashboard.style.display=isDash?'block':'none';
+  if(account) account.style.display=isDash?'none':'block';
+  if(dashBtn) dashBtn.classList.toggle('active',isDash);
+  if(accountBtn) accountBtn.classList.toggle('active',!isDash);
+  if(isDash && window.refreshDirectionDashboard) window.refreshDirectionDashboard();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+window.showAppView=showAppView;
+window.setCurrentUserContext=function(ctx){
+  const isDirection=!!ctx?.isDirection;
+  const dashBtn=document.getElementById('dashboardNavBtn');
+  if(dashBtn) dashBtn.style.display=isDirection?'flex':'none';
+  const emailLabel=document.getElementById('firebaseUserEmail');
+  if(emailLabel){emailLabel.innerHTML=(ctx?.email||'Compte connecté')+(isDirection?' <span class="role-pill">Direction</span>':' <span class="role-pill">Actionnaire</span>');}
+  if(!isDirection && document.getElementById('dashboardView')?.style.display==='block') showAppView('account');
+};
 loadSavedProfile();
 updateDraftTotal();
 render();
@@ -925,7 +1002,7 @@ import {
   createUserWithEmailAndPassword, sendPasswordResetEmail, signOut
 } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 import {
-  getFirestore, doc, getDoc, setDoc, serverTimestamp
+  getFirestore, doc, getDoc, setDoc, serverTimestamp, collection, getDocs
 } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -940,6 +1017,71 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const DIRECTION_EMAILS = ["judicael.edanngomo@gmail.com"];
+const isDirectionEmail = email => DIRECTION_EMAILS.includes(String(email||"").toLowerCase());
+
+function summarizeSubscriptions(subscriptions=[]){
+  const projects={}; let shares=0; let amount=0;
+  subscriptions.forEach(item=>{
+    const project=String(item?.project||"Filiale non précisée");
+    const qty=Number(item?.shares)||0;
+    const total=Number(item?.total)||qty*(Number(item?.unitPrice)||100000);
+    shares+=qty; amount+=total;
+    if(!projects[project]) projects[project]={shares:0,amount:0};
+    projects[project].shares+=qty; projects[project].amount+=total;
+  });
+  return {projects,shares,amount,hasSubscriptions:shares>0};
+}
+
+async function publishPublicSummary(user, subscriptions=[]){
+  if(!user) return;
+  const summary=summarizeSubscriptions(subscriptions);
+  await setDoc(doc(db,"srpge_public_summaries",user.uid),{
+    uid:user.uid,
+    projects:summary.projects,
+    shares:summary.shares,
+    amount:summary.amount,
+    hasSubscriptions:summary.hasSubscriptions,
+    updatedAt:serverTimestamp()
+  },{merge:true});
+}
+
+async function loadDirectionDashboard(){
+  const user=auth.currentUser;
+  if(!user || !isDirectionEmail(user.email)) return;
+  const list=document.getElementById("dashboardProjectsList");
+  if(list) list.innerHTML='<div class="empty">Chargement des statistiques…</div>';
+  try{
+    const snap=await getDocs(collection(db,"srpge_public_summaries"));
+    const totals={}; let users=0,shares=0,amount=0;
+    snap.forEach(d=>{
+      const x=d.data()||{};
+      if((Number(x.shares)||0)>0) users++;
+      shares+=Number(x.shares)||0; amount+=Number(x.amount)||0;
+      Object.entries(x.projects||{}).forEach(([name,val])=>{
+        if(!totals[name]) totals[name]={shares:0,amount:0};
+        totals[name].shares+=Number(val?.shares)||0;
+        totals[name].amount+=Number(val?.amount)||0;
+      });
+    });
+    document.getElementById("dashUsers").textContent=users.toLocaleString("fr-FR");
+    document.getElementById("dashShares").textContent=shares.toLocaleString("fr-FR");
+    document.getElementById("dashAmount").textContent=amount.toLocaleString("fr-FR")+" FCFA";
+    document.getElementById("dashProjects").textContent=Object.keys(totals).length.toLocaleString("fr-FR");
+    const rows=Object.entries(totals).sort((a,b)=>b[1].shares-a[1].shares);
+    if(list){
+      list.innerHTML=rows.length?rows.map(([name,val])=>{
+        const pct=shares?((val.shares/shares)*100):0;
+        return '<div class="dashboard-project-row"><div><strong>'+escapeHtml(name)+'</strong><div class="muted">'+val.amount.toLocaleString("fr-FR")+' FCFA</div></div><div class="bar"><span style="width:'+Math.max(0,Math.min(100,pct)).toFixed(1)+'%"></span></div><div class="numbers">'+val.shares.toLocaleString("fr-FR")+' action(s) · '+pct.toFixed(1).replace('.',',')+' %</div></div>';
+      }).join(''):'<div class="empty">Aucune souscription globale enregistrée.</div>';
+    }
+  }catch(e){
+    console.error(e);
+    if(list) list.innerHTML='<div class="notice">Le tableau global ne peut pas encore être lu. Les règles Firestore doivent autoriser les comptes connectés à lire la collection <b>srpge_public_summaries</b>.</div>';
+  }
+}
+window.refreshDirectionDashboard=loadDirectionDashboard;
+
 
 const authScreen = document.getElementById("firebaseAuthScreen");
 const userbar = document.getElementById("firebaseUserbar");
@@ -970,18 +1112,25 @@ async function loadUserData(user){
   const snap = await getDoc(ref);
   if(snap.exists()){
     const data = snap.data();
+    const role=isDirectionEmail(user.email)?"direction":(data.role||"actionnaire");
+    if(data.role!==role) await setDoc(ref,{role,updatedAt:serverTimestamp()},{merge:true});
     window.srpgeBridge?.applyProfile(data.profile || {});
     window.srpgeBridge?.setLines(data.subscriptions || []);
+    await publishPublicSummary(user,data.subscriptions || []);
+    window.setCurrentUserContext?.({email:user.email,role,isDirection:role==="direction"});
   }else{
+    const role=isDirectionEmail(user.email)?"direction":"actionnaire";
     await setDoc(ref, {
       email: user.email,
-      srpgeId: user.email === "judicael.edanngomo@gmail.com" ? "SRPGE-001" : "",
-      role: "actionnaire",
+      srpgeId: isDirectionEmail(user.email) ? "SRPGE-001" : "",
+      role,
       profile: {},
       subscriptions: [],
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     });
+    await publishPublicSummary(user,[]);
+    window.setCurrentUserContext?.({email:user.email,role,isDirection:role==="direction"});
   }
 }
 
@@ -1003,6 +1152,8 @@ window.firebaseApi = {
       subscriptions,
       updatedAt:serverTimestamp()
     }, {merge:true});
+    await publishPublicSummary(user,subscriptions);
+    if(isDirectionEmail(user.email)) loadDirectionDashboard();
   },
   async reloadSubscriptions(){
     const user = auth.currentUser;
@@ -1041,10 +1192,15 @@ onAuthStateChanged(auth, async user=>{
     authScreen.style.display="none";
     userbar.style.display="flex";
     document.getElementById("firebaseUserEmail").textContent=user.email || "Compte connecté";
-    try{await loadUserData(user)}catch(e){alert(humanError(e))}
+    try{
+      await loadUserData(user);
+      if(isDirectionEmail(user.email)) await loadDirectionDashboard();
+    }catch(e){alert(humanError(e))}
   }else{
     authScreen.style.display="flex";
     userbar.style.display="none";
+    window.setCurrentUserContext?.({email:"",role:"actionnaire",isDirection:false});
+    window.showAppView?.("account");
   }
 });
 </script>
