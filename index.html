@@ -1132,6 +1132,11 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const DIRECTION_EMAILS = ["judicael.edanngomo@gmail.com"];
 const isDirectionEmail = email => DIRECTION_EMAILS.includes(String(email||"").toLowerCase());
+function escapeHtml(value){
+  return String(value ?? "").replace(/[&<>"']/g, character => ({
+    "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#039;"
+  })[character]);
+}
 
 function summarizeSubscriptions(subscriptions=[]){
   const projects={}; let shares=0; let amount=0;
@@ -1227,7 +1232,12 @@ async function loadUserData(user){
   if(snap.exists()){
     const data = snap.data();
     const role=isDirectionEmail(user.email)?"direction":(data.role||"actionnaire");
-    if(data.role!==role) await setDoc(ref,{role,updatedAt:serverTimestamp()},{merge:true});
+    // Afficher immédiatement les droits Direction, même si Firebase refuse la mise à jour du rôle.
+    window.setCurrentUserContext?.({email:user.email,role,isDirection:role==="direction"});
+    if(data.role!==role){
+      try{await setDoc(ref,{role,updatedAt:serverTimestamp()},{merge:true});}
+      catch(error){console.warn("Rôle Direction appliqué localement; mise à jour Firebase refusée.",error);}
+    }
     let localBackup=[];
     try{localBackup=JSON.parse(localStorage.getItem('srpge_subscriptions_backup')||'[]')}catch(e){localBackup=[]}
     const localMutationAt=Number(localStorage.getItem('srpge_local_mutation_at')||0);
@@ -1235,10 +1245,10 @@ async function loadUserData(user){
     window.srpgeBridge?.applyProfile(data.profile || {});
     window.srpgeBridge?.setLines(effectiveSubscriptions);
     saveLocalSummary(user,effectiveSubscriptions);
-    window.setCurrentUserContext?.({email:user.email,role,isDirection:role==="direction"});
   }else{
     const role=isDirectionEmail(user.email)?"direction":"actionnaire";
-    await setDoc(ref, {
+    window.setCurrentUserContext?.({email:user.email,role,isDirection:role==="direction"});
+    try{await setDoc(ref, {
       email: user.email,
       srpgeId: isDirectionEmail(user.email) ? "SRPGE-001" : "",
       role,
@@ -1246,9 +1256,8 @@ async function loadUserData(user){
       subscriptions: [],
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
-    });
+    });}catch(error){console.warn("Compte initialisé localement; création Firestore refusée.",error);}
     saveLocalSummary(user,[]);
-    window.setCurrentUserContext?.({email:user.email,role,isDirection:role==="direction"});
   }
 }
 
