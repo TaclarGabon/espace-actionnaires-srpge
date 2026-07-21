@@ -273,13 +273,13 @@ input,select,textarea,button{max-width:100%;min-width:0}
       <button class="nav-btn active" id="accountNavBtn" onclick="showAppView('account')">◉ Mon compte</button>
       <button class="nav-btn">▤ Documents officiels</button>
     </nav>
-    <div class="sidebar-note"><b>Version 3.11</b><br>Comptes séparés et statistiques globales anonymisées.</div>
+    <div class="sidebar-note"><b>Version 3.11B</b><br>Comptes séparés et simulation locale du tableau global.</div>
   </aside>
 
   <main class="main">
     <section id="dashboardView" class="direction-dashboard">
-      <div class="topbar"><div><h2>Tableau de bord Direction</h2><p>Vue globale et anonymisée des souscriptions enregistrées par les différents comptes.</p></div><button class="btn btn-light" onclick="window.refreshDirectionDashboard && window.refreshDirectionDashboard()">↻ Actualiser</button></div>
-      <div class="dashboard-note">Les actionnaires ordinaires ne voient pas les noms, adresses, pièces d’identité ou bulletins des autres comptes. Cette vue additionne uniquement les souscriptions par filiale.</div>
+      <div class="topbar"><div><h2>Tableau de bord Direction</h2><p>Simulation globale et anonymisée des comptes testés sur cet appareil.</p></div><button class="btn btn-light" onclick="window.refreshDirectionDashboard && window.refreshDirectionDashboard()">↻ Actualiser</button></div>
+      <div class="dashboard-note">Les comptes restent séparés. Pour éviter toute modification des règles Firebase, cette version de test additionne uniquement les souscriptions enregistrées successivement sur ce navigateur. Elle permet de tester Edan et Otilia sur le même appareil, sans exposer leurs données personnelles.</div>
       <div class="grid dashboard-kpis">
         <div class="card dashboard-kpi"><span>Comptes ayant souscrit</span><strong id="dashUsers">0</strong></div>
         <div class="card dashboard-kpi"><span>Actions souscrites</span><strong id="dashShares">0</strong></div>
@@ -1002,7 +1002,7 @@ import {
   createUserWithEmailAndPassword, sendPasswordResetEmail, signOut
 } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 import {
-  getFirestore, doc, getDoc, setDoc, serverTimestamp, collection, getDocs
+  getFirestore, doc, getDoc, setDoc, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -1033,55 +1033,51 @@ function summarizeSubscriptions(subscriptions=[]){
   return {projects,shares,amount,hasSubscriptions:shares>0};
 }
 
-async function publishPublicSummary(user, subscriptions=[]){
+const LOCAL_SUMMARY_KEY="srpge_demo_summaries_v311b";
+function getLocalSummaries(){
+  try{return JSON.parse(localStorage.getItem(LOCAL_SUMMARY_KEY)||"{}")||{}}catch(e){return {}}
+}
+function saveLocalSummary(user,subscriptions=[]){
   if(!user) return;
+  const all=getLocalSummaries();
   const summary=summarizeSubscriptions(subscriptions);
-  await setDoc(doc(db,"srpge_public_summaries",user.uid),{
-    uid:user.uid,
+  all[user.uid]={
     projects:summary.projects,
     shares:summary.shares,
     amount:summary.amount,
     hasSubscriptions:summary.hasSubscriptions,
-    updatedAt:serverTimestamp()
-  },{merge:true});
+    updatedAt:new Date().toISOString()
+  };
+  localStorage.setItem(LOCAL_SUMMARY_KEY,JSON.stringify(all));
 }
-
-async function loadDirectionDashboard(){
+function loadDirectionDashboard(){
   const user=auth.currentUser;
   if(!user || !isDirectionEmail(user.email)) return;
   const list=document.getElementById("dashboardProjectsList");
-  if(list) list.innerHTML='<div class="empty">Chargement des statistiques…</div>';
-  try{
-    const snap=await getDocs(collection(db,"srpge_public_summaries"));
-    const totals={}; let users=0,shares=0,amount=0;
-    snap.forEach(d=>{
-      const x=d.data()||{};
-      if((Number(x.shares)||0)>0) users++;
-      shares+=Number(x.shares)||0; amount+=Number(x.amount)||0;
-      Object.entries(x.projects||{}).forEach(([name,val])=>{
-        if(!totals[name]) totals[name]={shares:0,amount:0};
-        totals[name].shares+=Number(val?.shares)||0;
-        totals[name].amount+=Number(val?.amount)||0;
-      });
+  const all=getLocalSummaries();
+  const totals={}; let users=0,shares=0,amount=0;
+  Object.values(all).forEach(x=>{
+    if((Number(x?.shares)||0)>0) users++;
+    shares+=Number(x?.shares)||0; amount+=Number(x?.amount)||0;
+    Object.entries(x?.projects||{}).forEach(([name,val])=>{
+      if(!totals[name]) totals[name]={shares:0,amount:0};
+      totals[name].shares+=Number(val?.shares)||0;
+      totals[name].amount+=Number(val?.amount)||0;
     });
-    document.getElementById("dashUsers").textContent=users.toLocaleString("fr-FR");
-    document.getElementById("dashShares").textContent=shares.toLocaleString("fr-FR");
-    document.getElementById("dashAmount").textContent=amount.toLocaleString("fr-FR")+" FCFA";
-    document.getElementById("dashProjects").textContent=Object.keys(totals).length.toLocaleString("fr-FR");
-    const rows=Object.entries(totals).sort((a,b)=>b[1].shares-a[1].shares);
-    if(list){
-      list.innerHTML=rows.length?rows.map(([name,val])=>{
-        const pct=shares?((val.shares/shares)*100):0;
-        return '<div class="dashboard-project-row"><div><strong>'+escapeHtml(name)+'</strong><div class="muted">'+val.amount.toLocaleString("fr-FR")+' FCFA</div></div><div class="bar"><span style="width:'+Math.max(0,Math.min(100,pct)).toFixed(1)+'%"></span></div><div class="numbers">'+val.shares.toLocaleString("fr-FR")+' action(s) · '+pct.toFixed(1).replace('.',',')+' %</div></div>';
-      }).join(''):'<div class="empty">Aucune souscription globale enregistrée.</div>';
-    }
-  }catch(e){
-    console.error(e);
-    if(list) list.innerHTML='<div class="notice">Le tableau global ne peut pas encore être lu. Les règles Firestore doivent autoriser les comptes connectés à lire la collection <b>srpge_public_summaries</b>.</div>';
+  });
+  document.getElementById("dashUsers").textContent=users.toLocaleString("fr-FR");
+  document.getElementById("dashShares").textContent=shares.toLocaleString("fr-FR");
+  document.getElementById("dashAmount").textContent=amount.toLocaleString("fr-FR")+" FCFA";
+  document.getElementById("dashProjects").textContent=Object.keys(totals).length.toLocaleString("fr-FR");
+  const rows=Object.entries(totals).sort((a,b)=>b[1].shares-a[1].shares);
+  if(list){
+    list.innerHTML=rows.length?rows.map(([name,val])=>{
+      const pct=shares?((val.shares/shares)*100):0;
+      return '<div class="dashboard-project-row"><div><strong>'+escapeHtml(name)+'</strong><div class="muted">'+val.amount.toLocaleString("fr-FR")+' FCFA</div></div><div class="bar"><span style="width:'+Math.max(0,Math.min(100,pct)).toFixed(1)+'%"></span></div><div class="numbers">'+val.shares.toLocaleString("fr-FR")+' action(s) · '+pct.toFixed(1).replace('.',',')+' %</div></div>';
+    }).join(''):'<div class="empty">Aucune souscription test enregistrée sur cet appareil.</div>';
   }
 }
 window.refreshDirectionDashboard=loadDirectionDashboard;
-
 
 const authScreen = document.getElementById("firebaseAuthScreen");
 const userbar = document.getElementById("firebaseUserbar");
@@ -1116,7 +1112,7 @@ async function loadUserData(user){
     if(data.role!==role) await setDoc(ref,{role,updatedAt:serverTimestamp()},{merge:true});
     window.srpgeBridge?.applyProfile(data.profile || {});
     window.srpgeBridge?.setLines(data.subscriptions || []);
-    await publishPublicSummary(user,data.subscriptions || []);
+    saveLocalSummary(user,data.subscriptions || []);
     window.setCurrentUserContext?.({email:user.email,role,isDirection:role==="direction"});
   }else{
     const role=isDirectionEmail(user.email)?"direction":"actionnaire";
@@ -1129,7 +1125,7 @@ async function loadUserData(user){
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     });
-    await publishPublicSummary(user,[]);
+    saveLocalSummary(user,[]);
     window.setCurrentUserContext?.({email:user.email,role,isDirection:role==="direction"});
   }
 }
@@ -1152,7 +1148,7 @@ window.firebaseApi = {
       subscriptions,
       updatedAt:serverTimestamp()
     }, {merge:true});
-    await publishPublicSummary(user,subscriptions);
+    saveLocalSummary(user,subscriptions);
     if(isDirectionEmail(user.email)) loadDirectionDashboard();
   },
   async reloadSubscriptions(){
