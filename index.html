@@ -358,6 +358,102 @@ input,select,textarea,button{max-width:100%;min-width:0}
 }
 </style>
 
+
+<style id="v56-official-documents-styles">
+.official-documents-panel{
+  overflow:visible!important;
+}
+.official-documents-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:14px;
+  margin-top:10px;
+}
+.official-document-card{
+  display:grid;
+  grid-template-columns:58px minmax(0,1fr) auto;
+  align-items:center;
+  gap:14px;
+  padding:16px;
+  border:1px solid #d8e5f3;
+  border-radius:15px;
+  background:#fff;
+  box-shadow:0 6px 18px rgba(23,67,110,.06);
+}
+.official-document-icon{
+  width:52px;
+  height:58px;
+  border-radius:11px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:#d92d3a;
+  color:#fff;
+  font-size:12px;
+  font-weight:900;
+  letter-spacing:.5px;
+}
+.official-document-icon.html-icon{
+  background:#0878c9;
+}
+.official-document-icon.pending-icon{
+  background:#8b98a8;
+}
+.official-document-info h4{
+  margin:0 0 5px;
+  color:#11233d;
+  font-size:16px;
+}
+.official-document-info p{
+  margin:0 0 8px;
+  color:#607086;
+  font-size:13px;
+  line-height:1.35;
+}
+.official-document-status{
+  display:inline-flex;
+  align-items:center;
+  padding:4px 9px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:800;
+}
+.official-document-status.available{
+  background:#e6f7ed;
+  color:#157541;
+}
+.official-document-status.pending{
+  background:#eef1f5;
+  color:#5d6978;
+}
+.official-document-open{
+  min-width:88px;
+  text-decoration:none!important;
+  text-align:center;
+}
+.official-documents-notice{
+  margin-top:16px;
+}
+@media(max-width:900px){
+  .official-documents-grid{
+    grid-template-columns:1fr;
+  }
+}
+@media(max-width:560px){
+  .official-document-card{
+    grid-template-columns:48px minmax(0,1fr);
+  }
+  .official-document-icon{
+    width:44px;
+    height:50px;
+  }
+  .official-document-open{
+    grid-column:1/-1;
+    width:100%;
+  }
+}
+</style>
+
 </head>
 <body>
 <script>
@@ -408,7 +504,7 @@ window.escapeHtml = window.escapeHtml || function(value){
       <button class="nav-btn active" id="accountNavBtn" onclick="showAppView('account')">◉ Mon compte</button>
       <button class="nav-btn" id="documentsNavBtn" onclick="showAppView('documents')">▤ Documents officiels</button>
     </nav>
-    <div class="sidebar-note"><b>Version 4.4 consolidée</b><br>Comptes séparés, statistiques locales, documents et preuves de paiement.</div>
+    <div class="sidebar-note"><b>Version 5.6 finale – Documents officiels</b><br>Comptes séparés, statistiques locales, documents et preuves de paiement.</div>
   </aside>
 
   <main class="main">
@@ -425,16 +521,66 @@ window.escapeHtml = window.escapeHtml || function(value){
       <div class="card panel"><div class="panel-head"><div><h3>Répartition par filiale</h3><p class="muted">Nombre d’actions et pourcentage dans l’ensemble des souscriptions.</p></div></div><div id="dashboardProjectsList" class="dashboard-projects"><div class="empty">Aucune souscription globale enregistrée.</div></div></div>
     </section>
     <section id="documentsView" class="direction-dashboard">
-      <div class="topbar"><div><h2>Documents officiels</h2><p>Documents généraux de la société accessibles aux actionnaires.</p></div></div>
-      <div class="card panel">
-        <div class="panel-head"><div><h3>Documents de la société</h3><p class="muted">Cette rubrique est distincte de vos bulletins et justificatifs personnels, qui restent dans « Mon compte ».</p></div></div>
-        <div class="details-list">
-          <div><b>Statuts de la SRPGE</b><span class="muted">Document à ajouter par la Direction</span></div>
-          <div><b>Règlement intérieur des actionnaires</b><span class="muted">Document à ajouter par la Direction</span></div>
-          <div><b>Présentation des filiales et projets</b><span class="muted">Document à ajouter par la Direction</span></div>
-          <div><b>Informations bancaires de souscription</b><span class="muted">Document à ajouter par la Direction</span></div>
+      <div class="topbar">
+        <div>
+          <h2>Documents officiels</h2>
+          <p>Documents de la SRPGE accessibles à tous les actionnaires connectés.</p>
         </div>
-        <div class="notice" style="margin-top:16px">Pour la démonstration, cette page fonctionne et présente l’emplacement prévu. Les fichiers officiels seront intégrés lorsqu’ils auront été validés par la société.</div>
+      </div>
+
+      <div class="card panel official-documents-panel">
+        <div class="panel-head">
+          <div>
+            <h3>Bibliothèque officielle de la SRPGE</h3>
+            <p class="muted">Cliquez sur « Ouvrir » pour consulter un document dans un nouvel onglet.</p>
+          </div>
+        </div>
+
+        <div class="official-documents-grid">
+          <article class="official-document-card">
+            <div class="official-document-icon">PDF</div>
+            <div class="official-document-info">
+              <h4>Statuts de la SRPGE</h4>
+              <p>Document constitutif officiel de la société.</p>
+              <span class="official-document-status available">Disponible</span>
+            </div>
+            <a class="btn btn-primary official-document-open" href="statuts-srpge.pdf" target="_blank" rel="noopener">Ouvrir</a>
+          </article>
+
+          <article class="official-document-card">
+            <div class="official-document-icon">PDF</div>
+            <div class="official-document-info">
+              <h4>Bulletin vierge de souscription</h4>
+              <p>Formulaire officiel vierge destiné aux nouvelles souscriptions.</p>
+              <span class="official-document-status available">Disponible</span>
+            </div>
+            <a class="btn btn-primary official-document-open" href="bulletin-vierge.pdf" target="_blank" rel="noopener">Ouvrir</a>
+          </article>
+
+          <article class="official-document-card">
+            <div class="official-document-icon html-icon">WEB</div>
+            <div class="official-document-info">
+              <h4>Bulletin intelligent</h4>
+              <p>Version numérique du bulletin de souscription.</p>
+              <span class="official-document-status available">Disponible</span>
+            </div>
+            <a class="btn btn-primary official-document-open" href="bulletin-intelligent.html" target="_blank" rel="noopener">Ouvrir</a>
+          </article>
+
+          <article class="official-document-card pending-document">
+            <div class="official-document-icon pending-icon">PDF</div>
+            <div class="official-document-info">
+              <h4>Convention d’actionnaires</h4>
+              <p>Le document sera activé dès validation définitive de son nom dans le dépôt.</p>
+              <span class="official-document-status pending">À confirmer</span>
+            </div>
+            <button class="btn btn-light official-document-open" type="button" onclick="alert('La convention d’actionnaires sera activée dès validation de son fichier officiel.')">Information</button>
+          </article>
+        </div>
+
+        <div class="notice official-documents-notice">
+          Les documents personnels, justificatifs et bulletins déjà remplis restent dans la rubrique « Mon compte ».
+        </div>
       </div>
     </section>
     <section id="accountView">
